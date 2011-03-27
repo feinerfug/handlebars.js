@@ -1,0 +1,42 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'bundler/setup'
+require 'thor'
+require 'v8'
+
+class HandlebarsCommand < Thor
+  desc "compile DIR_NAME", "compile all of the template files in the given directory"
+  method_option :prefix, :type => :string, :default => "Handlebars.Templates"
+  def compile(directory)
+    
+    if !File.directory?(directory)
+      puts "  ERROR: The given template directory doesn't exist."
+      exit
+    end
+    
+    files = Dir["#{directory}/**/*.hbs"]
+    if files.empty?
+      puts "  ERROR: No template files were found."
+      exit
+    end
+    
+    ctx = V8::Context.new
+    ctx.load(File.dirname(__FILE__) + "/../dist/handlebars.js")
+    
+    files.each do |file|
+      method = file.gsub(Regexp.new("^#{directory}"), "")
+      method.gsub!(/\.hbs$/, "")
+      method.gsub!(/\/+/, ".")
+      
+      template = File.read(file)
+      
+      ctx["template"] = template;
+      compiled = ctx.eval("Handlebars.compile(template).toString();")
+      
+      puts "#{options[:prefix]}#{method} = #{compiled}"
+    end
+  end
+end
+
+HandlebarsCommand.start
