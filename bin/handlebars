@@ -8,6 +8,7 @@ require 'v8'
 class HandlebarsCommand < Thor
   desc "compile DIR_NAME", "compile all of the template files in the given directory"
   method_option :prefix, :type => :string, :default => "Handlebars.Templates"
+  method_option :out, :type => :string, :desc => "Output file for compiled templates, by default output is written to STDOUT"
   def compile(directory)
     
     if !File.directory?(directory)
@@ -24,7 +25,15 @@ class HandlebarsCommand < Thor
     ctx = V8::Context.new
     ctx.load(File.dirname(__FILE__) + "/../dist/handlebars.js")
     
+    target = $stdout
+    if options[:out]
+      target = File.open(options[:out], "w")
+    end
+    
+    puts "  Compiling #{files.length} templates..." if options[:out]
+    
     files.each do |file|
+      puts "    #{file}..." if options[:out]
       method = file.gsub(Regexp.new("^#{directory}"), "")
       method.gsub!(/\.hbs$/, "")
       method.gsub!(/\/+/, ".")
@@ -32,10 +41,12 @@ class HandlebarsCommand < Thor
       template = File.read(file)
       
       ctx["template"] = template;
-      compiled = ctx.eval("Handlebars.compile(template).toString();")
+      compiled = ctx.eval("Handlebars.compile(template).source.toString();")
       
-      puts "#{options[:prefix]}#{method} = #{compiled}"
+      target << "#{options[:prefix]}#{method} = #{compiled};\n\n"
     end
+    
+    target.close if options[:out]
   end
 end
 
