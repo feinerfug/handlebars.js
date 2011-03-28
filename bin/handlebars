@@ -43,7 +43,7 @@ class HandlebarsCommand < Thor
       ctx["template"] = template;
       compiled = ctx.eval("Handlebars.compile(template).source.toString();")
       
-      target << "#{options[:prefix]}#{method} = #{compiled};\n\n"
+      target << "var #{options[:prefix]}#{method} = #{compiled};\n\n"
     end
     
     target.close if options[:out]
