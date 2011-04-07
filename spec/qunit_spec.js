@@ -420,6 +420,16 @@ test("GH-14: a partial preceding a selector", function() {
    shouldCompileTo(string, [hash, {}, {dude:dude}], "Dudes: Jeepers Creepers", "Regular selectors can follow a partial");
 });
 
+test("iterating over an array with different partials should result in different output", function() { 
+  var aPartial = Handlebars.compile("A");
+  var anotherPartial = Handlebars.compile("B");
+  var template = Handlebars.compile("{{#each .}}{{> item }}{{/each}}");
+  
+  template(["A", "B"], null, { item: aPartial });
+  var result = template(["A", "B"], null, { item: anotherPartial });
+  equal("BB", result, "uses the second partial: " + result + " should be BB.");
+});
+
 module("String literal parameters");
 
 test("simple literals work", function() {
